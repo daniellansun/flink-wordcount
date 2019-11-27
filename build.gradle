@@ -1,0 +1,70 @@
+/*
+ *  Licensed to the Apache Software Foundation (ASF) under one
+ *  or more contributor license agreements.  See the NOTICE file
+ *  distributed with this work for additional information
+ *  regarding copyright ownership.  The ASF licenses this file
+ *  to you under the Apache License, Version 2.0 (the
+ *  "License"); you may not use this file except in compliance
+ *  with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ */
+import java.util.concurrent.Callable
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+
+plugins {
+    id 'groovy'
+    id 'java'
+}
+
+group 'me.sunlan.flinklabs'
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    jcenter()
+}
+
+ext {
+    groovyVersion = '3.0.0-rc-1'
+    flinkVersion = '1.9.1'
+}
+
+dependencies {
+    compile "org.codehaus.groovy:groovy-all:$groovyVersion"
+    compile "org.apache.flink:flink-streaming-java_2.12:$flinkVersion"
+}
+
+class RunWordProviderAsyncTask extends DefaultTask {
+    @TaskAction
+    def startAsync() {
+        ExecutorService es = Executors.newSingleThreadExecutor()
+        es.submit({
+            project.javaexec {
+                classpath = project.sourceSets.main.runtimeClasspath
+                main = 'me.sunlan.flinklabs.wordcount.WordProvider'
+            }
+        } as Callable)
+
+    }
+}
+
+task runWordProvider(type: RunWordProviderAsyncTask, dependsOn: [classes])
+
+task runWordCount(type: JavaExec, dependsOn: [runWordProvider]) {
+    main = 'me.sunlan.flinklabs.wordcount.WordCount'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+wrapper {
+    gradleVersion = '5.6.4'
+}
