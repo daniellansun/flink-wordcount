@@ -46,7 +46,7 @@ class WordCount {
                 .keyBy(0)
                 .timeWindow(Time.seconds(TIME_WINDOW_SECONDS))
                 .sum(1)
-//                .reduce((t1, t2) -> new Tuple2<>(t1.f0, t1.f1 + t2.f1)) // Caused by: java.io.NotSerializableException: Non-serializable lambda
+//                .reduce { t1, t2 -> new Tuple2<>(t1.f0, t1.f1 + t2.f1) }
 
         DataStreamSink<Tuple2<String, Integer>> print = windowCounts.print()
         print.setParallelism(1)
