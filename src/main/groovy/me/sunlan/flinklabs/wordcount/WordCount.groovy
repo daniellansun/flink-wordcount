@@ -19,7 +19,6 @@
 package me.sunlan.flinklabs.wordcount
 
 import groovy.transform.CompileStatic
-import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.api.java.tuple.Tuple2
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.datastream.DataStreamSink
@@ -34,19 +33,17 @@ class WordCount {
     static void main(String[] args) {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
         DataStream<String> text = env.socketTextStream("localhost", WordProvider.PORT, "\n")
-        DataStream<Tuple2<String, Integer>> windowCounts = text.flatMap(
-                new FlatMapFunction<String, Tuple2<String, Integer>>() {
-                    @Override
-                    void flatMap(String value, Collector<Tuple2<String, Integer>> out) {
-                        value.split("\\s").each { String word ->
-                            out.collect(Tuple2.of(word, 1))
-                        }
+        DataStream<Tuple2<String, Integer>> windowCounts =
+                text.flatMap((String value, Collector<Tuple2<String, Integer>> out) -> {
+                    value.split("\\s").each { String word ->
+                        out.collect(Tuple2.of(word, 1))
                     }
-                })
-                .keyBy(0)
-                .timeWindow(Time.seconds(TIME_WINDOW_SECONDS))
-//                .sum(1)
-                .reduce((t1, t2) -> new Tuple2<>(t1.f0, t1.f1 + t2.f1))
+                }
+        )
+        .keyBy(0)
+        .timeWindow(Time.seconds(TIME_WINDOW_SECONDS))
+        .reduce((t1, t2) -> new Tuple2<>(t1.f0, t1.f1 + t2.f1))
+        //                .sum(1)
 
         DataStreamSink<Tuple2<String, Integer>> print = windowCounts.print()
         print.setParallelism(1)
