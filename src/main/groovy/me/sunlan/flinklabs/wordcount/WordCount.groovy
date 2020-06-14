@@ -19,11 +19,16 @@
 package me.sunlan.flinklabs.wordcount
 
 import groovy.transform.CompileStatic
+import org.apache.flink.api.common.functions.MapFunction
+import org.apache.flink.api.java.functions.KeySelector
+import org.apache.flink.api.java.tuple.Tuple
 import org.apache.flink.api.java.tuple.Tuple2
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.streaming.api.functions.windowing.WindowFunction
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.api.windowing.windows.GlobalWindow
 import org.apache.flink.util.Collector
 
 @CompileStatic
@@ -32,21 +37,36 @@ class WordCount {
 
     static void main(String[] args) {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()
-        DataStream<String> text = env.socketTextStream("localhost", WordProvider.PORT, "\n")
-        DataStream<Tuple2<String, Integer>> windowCounts =
-                text.flatMap((String value, Collector<Tuple2<String, Integer>> out) -> {
-                    value.split("\\s").each { String word ->
-                        out.collect(Tuple2.of(word, 1))
-                    }
-                }
-        )
-        .keyBy(0)
-        .timeWindow(Time.seconds(TIME_WINDOW_SECONDS))
-        .reduce((t1, t2) -> Tuple2.of(t1.f0, t1.f1 + t2.f1))
-        //                .sum(1)
+        env.disableOperatorChaining()
+        env.setBufferTimeout(5)
 
-        DataStreamSink<Tuple2<String, Integer>> print = windowCounts.print()
-        print.setParallelism(1)
+        DataStream<String> text = env.socketTextStream("localhost", WordProvider.PORT, "\n").setParallelism(1)
+        DataStream<Long> windowCounts =
+                text.map(new MapFunction<String, Long>() {
+                    @Override
+                    Long map(String value) throws Exception {
+                        Long num = Long.parseLong(value.trim())
+//                        println "num: ${num}"
+                        return num
+                    }
+                }).setParallelism(8)
+        .keyBy(new KeySelector<Long, Long>() {
+            @Override
+            Long getKey(Long value) throws Exception {
+                return value % 2
+            }
+        })
+        .countWindow(1)
+        .apply(new WindowFunction<Long, Long, Long, GlobalWindow>() {
+            @Override
+            void apply(Long aLong, GlobalWindow window, Iterable<Long> input, Collector<Long> out) throws Exception {
+                for (n in input) {
+                    out.collect(n)
+                }
+            }
+        }).setParallelism(4)
+
+        windowCounts.print()
 
         env.execute "WordCount"
     }

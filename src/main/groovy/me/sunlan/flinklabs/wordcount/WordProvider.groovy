@@ -20,10 +20,13 @@ package me.sunlan.flinklabs.wordcount
 
 import groovy.transform.CompileStatic
 
+import java.util.concurrent.atomic.AtomicLong
+
 @CompileStatic
 class WordProvider {
     public static final int PORT = 9090
     public static final int PROVIDE_WORD_INTERVAL = 2000
+    public static final AtomicLong SEQ  = new AtomicLong(0)
 
     static void main(String[] args) {
         def socketServer = new ServerSocket(PORT)
@@ -33,10 +36,10 @@ class WordProvider {
             socketServer.accept { socket ->
                 socket.withStreams { input, output ->
                     while (true) {
-                        def word = "hello${new Random().nextInt(3)}"
-                        println "<<<<<<<<<<<<   ${word}"
-                        output << "${word}\n"
-                        Thread.sleep(PROVIDE_WORD_INTERVAL)
+//                        def word = "hello${new Random().nextInt(3)}"
+//                        println "<<<<<<<<<<<<   ${word}"
+                        output << "${SEQ.getAndIncrement()}\n"
+//                        Thread.sleep(PROVIDE_WORD_INTERVAL)
                     }
                 }
             }
