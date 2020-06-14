@@ -35,8 +35,8 @@ repositories {
 }
 
 ext {
-    groovyVersion = '3.0.0-rc-2'
-    flinkVersion = '1.9.1'
+    groovyVersion = '3.0.4'
+    flinkVersion = '1.10.1'
 }
 
 dependencies {
