@@ -28,7 +28,7 @@ import org.apache.flink.util.Collector
 
 @CompileStatic
 class WordCount {
-    public static final long TIME_WINDOW_SECONDS = (long) (WordProvider.PROVIDE_WORD_PERIOD / 1000) * 3
+    public static final long TIME_WINDOW_SECONDS = (long) (WordProvider.PROVIDE_WORD_INTERVAL / 1000) * 3
 
     static void main(String[] args) {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment()

@@ -23,7 +23,7 @@ import groovy.transform.CompileStatic
 @CompileStatic
 class WordProvider {
     public static final int PORT = 9090
-    public static final int PROVIDE_WORD_PERIOD = 2000
+    public static final int PROVIDE_WORD_INTERVAL = 2000
 
     static void main(String[] args) {
         def socketServer = new ServerSocket(PORT)
@@ -36,7 +36,7 @@ class WordProvider {
                         def word = "hello${new Random().nextInt(3)}"
                         println "<<<<<<<<<<<<   ${word}"
                         output << "${word}\n"
-                        Thread.sleep(PROVIDE_WORD_PERIOD)
+                        Thread.sleep(PROVIDE_WORD_INTERVAL)
                     }
                 }
             }
